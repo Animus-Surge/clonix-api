@@ -1,8 +1,0 @@
-[package]
-name = "clonix-api"
-version = "0.1.0"
-edition = "2024"
-
-[dependencies]
-diesel = "2.3.11"
-rocket = "0.5.1"

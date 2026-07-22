@@ -1,0 +1,20 @@
+[project]
+name = "clonix-api"
+version = "0.1.0"
+description = "Backend database management system for CloNIX"
+authors = [
+    {name = "Evan Floyd (Surge)",email = "esfloyd9341@gmail.com"}
+]
+requires-python = ">=3.12,<4.0"
+dependencies = [
+    "loguru (>=0.7.3,<0.8.0)",
+    "sqlalchemy (>=2.0.51,<3.0.0)",
+    "fastapi (>=0.139.2,<0.140.0)",
+]
+
+[tool.pyright]
+pythonVersion = "3.12"
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"

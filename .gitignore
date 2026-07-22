@@ -1,1 +1,9 @@
-/target
+*.lock
+
+*.log
+
+*.tar*
+*.env*
+
+__pycache__/
+
