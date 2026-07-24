@@ -1,4 +1,11 @@
 {
-  "venvPath": "~/.cache/pypoetry/virtualenvs",
-  "venv": "clonix-api-Tc5dQMMz-py3"
+  "venvPath": ".",
+  "venv": ".venv",
+  "pythonVersion": "3.12",
+  "analysis": {
+    "autoSearchPaths": true,
+    "useLibraryCodeForTypes": true,
+    "diagnosticMode": "workspace",
+    "typeCheckingMode": "basic"
+  }
 }

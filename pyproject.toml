@@ -10,11 +10,28 @@ dependencies = [
     "loguru (>=0.7.3,<0.8.0)",
     "sqlalchemy (>=2.0.51,<3.0.0)",
     "fastapi (>=0.139.2,<0.140.0)",
+    "uvicorn[standard] (>=0.51.0,<0.52.0)",
 ]
-
-[tool.pyright]
-pythonVersion = "3.12"
 
 [build-system]
 requires = ["poetry-core>=2.0.0,<3.0.0"]
 build-backend = "poetry.core.masonry.api"
+
+[virtualenvs]
+in-project = true
+
+[tool.poetry]
+package-mode = false
+
+[tool.fastapi]
+entrypoint = "src.main:app"
+
+[tool.pyright]
+venvPath = "."
+venv = ".venv"
+pythonVersion = "3.12"
+
+[dependency-groups]
+dev = [
+    "pytest (>=9.1.1,<10.0.0)"
+]
