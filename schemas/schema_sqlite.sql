@@ -37,7 +37,7 @@ CREATE TABLE IF NOT EXISTS Units (
 );
 
 CREATE TABLE IF NOT EXISTS Devices (
-    SerialNumber INTEGER NOT NULL,
+    SerialNumber TEXT NOT NULL,
     Hostname TEXT NOT NULL,
     Unit INTEGER NOT NULL,
     ProvisionDate TEXT NOT NULL,
@@ -49,7 +49,7 @@ CREATE TABLE IF NOT EXISTS Devices (
 
 CREATE TABLE IF NOT EXISTS DeviceKeys (
     KeyID INTEGER NOT NULL,
-    Device INTEGER NOT NULL,
+    Device TEXT NOT NULL,
     Value TEXT NOT NULL,
     KeyType INTEGER NOT NULL,
     ExpiryDate TEXT,

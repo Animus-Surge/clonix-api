@@ -34,7 +34,7 @@ create table if not exists Units (
 );
 
 create table if not exists Devices (
-  SerialNumber number not null,
+  SerialNumber varchar not null,
   Hostname varchar not null,
   Unit number not null,
   ProvisionDate timestamp not null,
@@ -46,7 +46,7 @@ create table if not exists Devices (
 
 create table if not exists DeviceKeys (
   KeyID number not null,
-  Device number not null,
+  Device varchar not null,
   Value varchar not null,
   KeyType number not null,
   ExpiryDate timestamp,
