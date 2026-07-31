@@ -11,6 +11,7 @@ dependencies = [
     "sqlalchemy (>=2.0.51,<3.0.0)",
     "fastapi (>=0.139.2,<0.140.0)",
     "uvicorn[standard] (>=0.51.0,<0.52.0)",
+    "python3-saml (>=1.16.0,<2.0.0)",
 ]
 
 [build-system]
