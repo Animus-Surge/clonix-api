@@ -6,5 +6,10 @@
 *.env*
 
 __pycache__/
+saml/
+
+*.pem
+*.crt
+*.key
 
 *.sqlite
