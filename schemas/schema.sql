@@ -1,6 +1,7 @@
 -- CloNIX Schema
 -- MySQL dialect
 
+-- 
 create table Notifications (
   notif_id bigint auto_increment primary key,
 
@@ -23,8 +24,11 @@ create table Logs (
 
   source_service varchar(100) not null,
   message varchar(255) not null,
-  created_at timestamp default current_timestamp;
+  created_at timestamp default current_timestamp,
+
+  index idx_log_creation (log_id, created_at desc)
 );
+
 
 create table Units (
   unit_id integer primary key,
@@ -36,6 +40,12 @@ create table Users (
 );
 
 create table AuditLogs (
+  log_id bigint auto_increment primary key,
+  
+  user_id integer not null,
+
+
+  constraint fk_audit_user foreign key user_id references (Users.user_id)  
 );
 
 create table Devices (
@@ -47,16 +57,16 @@ create table Devices (
   serial_number varchar(32) unique not null,
 
   -- Handled by api calls
-  provision_stamp timestamp not null default now(),
-  last_check_in timestamp not null default now(),
+  provision_stamp timestamp not null default current_timestamp,
+  last_check_in timestamp not null default current_timestamp,
 
-  -- Websocket URI for metrics
-  metrics_uri varchar(256)
+  -- Websocket URI for metrics; e.g. ws://clonix/api/websocket/<uuid>
+  metrics_uri varchar(256),
 
   -- Management
   unit integer not null,
+  contact integer,
 
-
+  constraint fk_contact_user foreign key contact references (Users.user_id),
   constraint fk_device_unit foreign key unit references (Units.unit_id)
-  
 );
