@@ -1,58 +1,62 @@
 -- CloNIX Schema
+-- MySQL dialect
 
-create table if not exists Roles (
-  RoleID number not null,
-  RoleName varchar not null,
+create table Notifications (
+  notif_id bigint auto_increment primary key,
 
-  constraint PK_Role primary key (RoleID)
+  target_type varchar(20) not null,
+  target_id varchar(50) not null,
+  severity varchar(20) not null,
+  title varchar(100) not null,
+
+  metadata json,
+  emit_stamp datetime(6) not null,
+  created_at timestamp default current_timestamp,
+
+  index idx_target_emit (target_id, emit_stamp desc)
 );
 
-create table if not exists Scopes (
-  ScopeID number not null,
-  ScopeName varchar not null,
-  ScopePermissionString varchar not null,
+create table Logs (
+  log_id bigint auto_increment primary key,
 
-  constraint PK_Scope primary key (ScopeID)
+  system_uuid binary(16) not null,
+
+  source_service varchar(100) not null,
+  message varchar(255) not null,
+  created_at timestamp default current_timestamp;
 );
 
-create table if not exists RoleScopes (
-  Role number not null,
-  Scope number not null,
+create table Units (
+  unit_id integer primary key,
 
-  constraint PK_RoleScope primary key (Role, Scope),
-  constraint FK_RoleScope_Role foreign key (Role) references Roles(RoleID),
-  constraint FK_RoleScope_Scope foreign key (Scope) references Scopes(ScopeID)
+  unit_name varchar(256) not null
+);
+create table Users (
+  user_id integer primary key
 );
 
-create table if not exists Units (
-  UnitID number not null,
-  DepartmentName varchar not null,
-  PointOfContact varchar,
-  Parent number,
-
-  constraint FK_Unit_Parent foreign key (Parent) references Units(UnitID)
+create table AuditLogs (
 );
 
-create table if not exists Devices (
-  SerialNumber varchar not null,
-  Hostname varchar not null,
-  Unit number not null,
-  ProvisionDate timestamp not null,
-  LastCheckIn timestamp not null,
+create table Devices (
+  -- Generated at provision time; STAYS WITH THE SYSTEM.
+  device_uuid binary(16) primary key,
+  
+  -- Information given to the API, or set in the UI.
+  hostname varchar(32) unique not null,
+  serial_number varchar(32) unique not null,
 
-  constraint PK_Device primary key (SerialNumber),
-  constraint FK_Device_Unit foreign key (Unit) references Units(UnitID)
-);
+  -- Handled by api calls
+  provision_stamp timestamp not null default now(),
+  last_check_in timestamp not null default now(),
 
-create table if not exists DeviceKeys (
-  KeyID number not null,
-  Device varchar not null,
-  Value varchar not null,
-  KeyType number not null,
-  ExpiryDate timestamp,
-  KeyComment varchar,
+  -- Websocket URI for metrics
+  metrics_uri varchar(256)
 
-  constraint PK_Key primary key (KeyID),
-  constraint UQ_Key_Value unique (Value),
-  constraint FK_Key_Device foreign key (Device) references Devices(SerialNumber)
+  -- Management
+  unit integer not null,
+
+
+  constraint fk_device_unit foreign key unit references (Units.unit_id)
+  
 );
