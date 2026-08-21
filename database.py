@@ -18,7 +18,7 @@ def get_db():
 
 
 # TODO: filter
-def get_devices(count: int = -1):
+def get_devices(hostname_filter: str = ''):
     pass
 
 

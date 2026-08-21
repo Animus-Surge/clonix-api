@@ -1,7 +1,7 @@
 # CloNIX API objects.py
 # Common structures for data handling.
 
-from typing import List
+from typing import List, Union
 
 import pydantic
 
@@ -33,12 +33,29 @@ class HardwareMemoryReprObject(pydantic.BaseModel):
     main_memory: float = 0.0
     swap_memory: float = 0.0
 
+class ContactReprObject(pydantic.BaseModel):
+    contact_id: int = 0
+    name: str = ""
+    email: str = ""
+    phone: str = ""
+
+class UserReprObject(pydantic.BaseModel):
+    user_id: int = 0
+    contact: dict = {}
+
+class UnitReprObject(pydantic.BaseModel):
+    unit_id: int = 0
+    unit_name: str = ""
+    parent_unit: dict | None = None
+    manifest_id: str = ""
+    admin: dict = {}
+
 class DeviceReprObject(pydantic.BaseModel):
     # Database-stored attributes
     uuid: str = ""
     hostname: str = "" # Contains the domain suffix, so if the hostname stored is 'some-hostname', this field returns 'some-hostname.<suffix>'. i.e. 'some-hostname.example.adp.net'
     serial_number: str = ""
-    unit: str = ""
+    unit: dict = {}
 
     provision_timestamp: str = "" # THIS IS NOT DEVICE CREATION DATE. This is when clonix starts receiving information from the actual device.
     checkin_timestamp: str = "" # Puppet's last check in
@@ -61,6 +78,6 @@ class ErrorResponseObject(pydantic.BaseModel):
     message: str = ""
 
 class DeviceListResponseObject(pydantic.BaseModel):
-    total_count: int = 0
+    count: int = 0
     devices: List[DeviceReprObject] = []
 

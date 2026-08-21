@@ -1,7 +1,5 @@
 import datetime
 
-from loguru import logger
-
 from fastapi import FastAPI, Request, Depends
 from fastapi.responses import RedirectResponse
 
@@ -11,15 +9,15 @@ from sqlalchemy.engine import Connection
 
 import database
 
-from objects import DeviceListResponseObject
-from schema import device
+import schema
+from objects import DeviceListResponseObject, DeviceReprObject, UnitReprObject
 
 app = FastAPI()
-
+schema.metadata_obj.create_all(database.engine)
 
 # Authentication endpoints
 @app.get("/api/v1/auth/login")
-async def login(request: Request):
+async def login(request: Request): 
     pass
 
 @app.post("/api/v1/auth/saml/acs")
@@ -34,29 +32,47 @@ async def saml_metadata():
 # Primary Endpoints
 @app.get("/api/v1/")
 async def index():
-    logger.info("GET: / Root index get")
     return {"message": "Hello World!"}
 
 
 # Devices
 @app.get("/api/v1/devices/")
 async def list_devices(request: Request, db: Connection = Depends(database.get_db)):
-    # TODO: filters in the request body
-    statement = select(device)
+    dev_sel_stmt = select(schema.device)
+    dev_sel_res = db.execute(dev_sel_stmt).mappings().all()
 
-    result = db.execute(statement).all()
-    
+    unit_sel_stmt = select(schema.unit)
+    unit_sel_res = db.execute(unit_sel_stmt).mappings().all()
+
+    # TODO: filters
+
     device_list = []
-    num_devices = len(result)
-    device_dict = [dict(device) for device in result]
-    for device in device_dict:
-        device_list.append(
+    for device in dev_sel_res:
+        device_obj = DeviceReprObject(
+            uuid=device.get("device_uuid", ""),
+            hostname=device.get("hostname", ""),
+            serial_number=device.get("serial_number", ""),
+            unit={},
+            provision_timestamp=device.get("provision_stamp", "").strftime("%Y/%m/%d %H:%M:%S"),
+            checkin_timestamp=device.get("checkin_stamp", "").strftime("%Y/%m/%d %H:%M:%S")
+        ) # TODO: facter integration
 
-    response_obj = DeviceListResponseObject(total_count=num_devices, devices=device_dict)
+        for unit in unit_sel_res:
+            if unit.get("unit_id") == device.unit:
+                unit_obj = UnitReprObject(
+                    unit_id=unit.get("unit_id", 0),
+                    unit_name=unit.get("unit_name", ""),
+                    manifest_id=unit.get("manifest_id", ""),
+                )
+                device_obj.unit = dict(unit_obj)
+        
+        device_list.append(dict(device_obj))
 
-    return dict(response_obj)
+    device_list_obj = DeviceListResponseObject(
+        count=len(device_list),
+        devices=device_list)
 
-
+    return dict(device_list_obj)
 
 @app.post("/api/v1/devices/")
 async def create_device(request: Request):
@@ -66,11 +82,11 @@ async def create_device(request: Request):
     pass
 
 @app.get("/api/v1/devices/{device}")
-async def get_device_info(request: Request, device):
+async def get_device_info(request: Request, device: str):
     pass
 
 @app.put("/api/v1/devices/{device}")
-async def update_device(request: Request, device):
+async def update_device(request: Request, device: str):
     pass
 
 
@@ -86,6 +102,7 @@ async def get_device_keys(request: Request, device, key):
 
 @app.post("/api/v1/devices/{device}/keys/{key}")
 async def create_device_key(request: Request, device, key):
+    # This should be called by a cloner device
     pass
 
 @app.delete("/api/v1/devices/{device}/keys/{key}")
@@ -132,7 +149,3 @@ async def remove_user(request: Request, user):
 async def update_user_contact(request: Request, user):
     pass
 
-
-# Units
-@app.get("/api/v1/units")
-async def list_units
