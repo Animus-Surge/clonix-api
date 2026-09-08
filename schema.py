@@ -2,98 +2,154 @@
 Database schema definition
 """
 
-from sqlalchemy import JSON, DateTime, BigInteger, ForeignKey, MetaData, Table, Column, Integer, String, func
+import datetime
+from enum import Enum
+
+from sqlalchemy import JSON, DateTime, BigInteger, ForeignKey, MetaData, Table, Column, Integer, String, func, null
+from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+
+from typing import Literal
 
 # Metadata object
 metadata_obj = MetaData()
 
+# Enum/Literal decl
+NotificationTargetType = Literal['User', 'Group', 'System']
+NotificationSeverity = Literal['Normal', 'Increased', 'Severe', 'Critical']
+
+AuditLogStatus = Literal["Allowed", "Blocked", "Other"]
+
+KeyType = Literal["Encryption", "BIOS", "Other"]
+
 # Table decl
 
-notification = Table("Notifications", metadata_obj,
-                     Column("notif_id", BigInteger, autoincrement=True, primary_key=True),
-                     
-                     # Target information
-Column("target_type", String(20), nullable=False),
-                     Column("target_id", String(50), nullable=False),
-                     
-                     # Notification information
-                     Column("severity", String(20), nullable=False),
-                     Column("title", String(128), nullable=False),
-                     Column("metadata", JSON, nullable=False),
+class ClonixTableBase(DeclarativeBase):
+    type_annotation_map = {
+        dict: JSON
+    }
+    pass
 
-                     # Timestamps
-                     Column("emit_stamp", DateTime(True), nullable=False),
-                     Column("create_stamp", DateTime(True), nullable=False))
+class Notification(ClonixTableBase):
+    __tablename__="Notifications"
 
-scope = Table("Scopes", metadata_obj,
-              Column("scope_id", Integer, autoincrement=True, primary_key=True),
-              Column("name", String(256), nullable=False))
+    notification_id: Mapped[int] = mapped_column(primary_key=True,autoincrement=True)
 
-user_contact = Table("Contacts", metadata_obj,
-                     Column("contact_id", Integer, autoincrement=True, primary_key=True),
-                     Column("name", String(512), nullable=False),
-                     Column("email", String(512), nullable=False),
-                     Column("phone", String(10), nullable=True))
+    target_type: Mapped[NotificationTargetType] = mapped_column(nullable=False)
+    target_id: Mapped[str] = mapped_column(String(50), nullable=True)
 
-user = Table("Users", metadata_obj,
-             Column("user_id", Integer, autoincrement=True, primary_key=True),
-             Column("contact", Integer, ForeignKey("Contacts.contact_id"), nullable=False))
+    severity: Mapped[NotificationSeverity] = mapped_column(nullable=False)
+    notification_title: Mapped[str] = mapped_column(String(256))
+    notification_metadata: Mapped[dict]
 
-user_scope = Table("UserScopes", metadata_obj,
-                   Column("scope_id", Integer, ForeignKey("Scopes.scope_id"), primary_key=True),
-                   Column("user_id", Integer, ForeignKey("Users.user_id"), primary_key=True))
+    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
 
-audit_log = Table("AuditLogs", metadata_obj,
-                  Column("log_id", BigInteger, autoincrement=True, primary_key=True),
+class Scope(ClonixTableBase):
+    __tablename__="Scopes"
 
-                  Column("user_id", Integer, ForeignKey("Users.user_id"), nullable=False),
-                  Column("action", String(256), nullable=False),
-                  Column("status", String(256), nullable=False),
-                  Column("stamp", DateTime(True), nullable=False))
+    scope_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    scope_name: Mapped[str] = mapped_column(String(256))
 
-unit = Table("Units", metadata_obj,
-             Column("unit_id", Integer, autoincrement=True, primary_key=True),
-             Column("unit_name", String(256)),
-             Column("parent", Integer, ForeignKey("Units.unit_id"), nullable=True),
-             Column("manifest_id", String(256), nullable=True),
-             Column("admin", Integer, ForeignKey("Users.user_id")))
+class Contact(ClonixTableBase):
+    __tablename__="Contacts"
 
-unit_contact = Table("UnitContacts", metadata_obj,
-                     Column("unit_id", Integer, ForeignKey("Units.unit_id"), primary_key=True),
-                     Column("contact_id", Integer, ForeignKey("Contacts.contact_id"), primary_key=True))
+    contact_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    name: Mapped[str] = mapped_column(String(128))
+    email: Mapped[str] = mapped_column(String(128))
+    phone: Mapped[str] = mapped_column(String(10), nullable=True)
 
-user_unit = Table("UserUnits", metadata_obj,
-                  Column("user_id", Integer, ForeignKey("Users.user_id"), primary_key=True),
-                  Column("unit_id", Integer, ForeignKey("Units.unit_id"), primary_key=True))
+class User(ClonixTableBase):
+    __tablename__="Users"
 
-device = Table("Devices", metadata_obj,
-               Column("device_uuid", String(32), primary_key=True),
-               Column("hostname", String(256), unique=True),
-               Column("serial_number", String(32), unique=True),
-               Column("unit", Integer, ForeignKey("Units.unit_id")),
+    user_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    contact: Mapped[int] = mapped_column(ForeignKey("Contacts.contact_id"))
 
-               Column("provision_stamp", DateTime(True), server_default=func.now()),
-               Column("checkin_stamp", DateTime(True), server_default=func.now()),
+class UserScope(ClonixTableBase):
+    __tablename__="UserScopes"
 
-               Column("metrics_url", String(256), nullable=True))
+    user_id: Mapped[int] = mapped_column(ForeignKey("Users.user_id"), primary_key=True)
+    scope_id: Mapped[int] = mapped_column(ForeignKey("Scopes.scope_id"), primary_key=True)
 
-device_contact = Table("DeviceContacts", metadata_obj,
-                       Column("device_uuid", String(32), ForeignKey("Devices.device_uuid"), primary_key=True),
-                       Column("contact_id", Integer, ForeignKey("Contacts.contact_id"), primary_key=True))
+class AuditLog(ClonixTableBase):
+    __tablename__="AuditLogs"
 
-device_log = Table("DeviceLogs", metadata_obj,
-                   Column("log_id", BigInteger, autoincrement=True, primary_key=True),
-                   Column("device_uuid", String(32), ForeignKey("Devices.device_uuid"), primary_key=True),
+    log_id: Mapped[int] = mapped_column(BigInteger, primary_key=True, autoincrement=True)
 
-                   Column("source", String(100)),
-                   Column("message", String(256)),
-                   Column("stamp", DateTime(True), server_default=func.now()))
+    user_id: Mapped[int] = mapped_column(ForeignKey("Users.user_id"))
+    action: Mapped[str] = mapped_column(String(512))
+    status: Mapped[AuditLogStatus]
+    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
 
-device_key = Table("DeviceKeys", metadata_obj,
-                   Column("key_id", Integer, autoincrement=True, primary_key=True),
-                   Column("device_uuid", String(32), ForeignKey("Devices.device_uuid"), primary_key=True),
+class Unit(ClonixTableBase):
+    __tablename__="Units"
 
-                   Column("value", String(128), unique=True),
-                   Column("expiry", DateTime(True)),
-                   Column("type", String(256)))
+    unit_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+    unit_name: Mapped[str] = mapped_column(String(128))
+    parent: Mapped[int] = mapped_column(ForeignKey("Units.unit_id"), nullable=True)
+    manifest_id: Mapped[str] = mapped_column(String(128), nullable=True)
+    administrator: Mapped[int] = mapped_column(ForeignKey("Users.user_id"))
+
+class UserUnit(ClonixTableBase):
+    __tablename__="UserUnits"
+
+    user_id: Mapped[int] = mapped_column(ForeignKey("Users.user_id"), primary_key=True)
+    unit_id: Mapped[int] = mapped_column(ForeignKey("Units.unit_id"), primary_key=True)
+
+class Configuration(ClonixTableBase):
+    __tablename__="Configurations"
+
+    configuration_id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+    configuration_name: Mapped[str] = mapped_column(String(128))
+    filepath: Mapped[str] = mapped_column(String(512))
+    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+
+class Image(ClonixTableBase):
+    __tablename__="Images"
+
+    image_id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+    image_name: Mapped[str] = mapped_column(String(128))
+    image_type: Mapped[str]
+    filepath: Mapped[str] = mapped_column(String(512))
+    timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    pass
+
+class Device(ClonixTableBase):
+    __tablename__="Devices"
+
+    device_id: Mapped[str] = mapped_column(String(36), primary_key=True, unique=True)
+    device_hostname: Mapped[str] = mapped_column(String(128), unique=True)
+    device_sn: Mapped[str] = mapped_column(String(256), unique=True)
+    device_unit: Mapped[int] = mapped_column(ForeignKey("Units.unit_id"))
+
+    provision_timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+
+class AutoProvision(ClonixTableBase):
+    __tablename__="Autoprovision"
+
+    serial_number: Mapped[str] = mapped_column(String(256), ForeignKey("Devices.device_sn"), primary_key=True)
+
+class DeviceContact(ClonixTableBase):
+    __tablename__="DeviceContacts"
+
+    device_id: Mapped[str] = mapped_column(String(36), ForeignKey("Devices.device_id"), primary_key=True)
+    contact_id: Mapped[int] = mapped_column(ForeignKey("Contacts.contact_id"), primary_key=True)
+
+class DeviceLog(ClonixTableBase):
+    __tablename__="DeviceLogs"
+
+    log_id: Mapped[int] = mapped_column(BigInteger, autoincrement=True, primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(36), ForeignKey("Devices.device_id"), primary_key=True)
+
+    source: Mapped[str] = mapped_column(String(128))
+    message: Mapped[str] = mapped_column(String(512))
+    timestamp: Mapped[datetime.datetime]
+
+class DeviceKey(ClonixTableBase):
+    __tablename__="DeviceKeys"
+
+    key_id: Mapped[int] = mapped_column(autoincrement=True, primary_key=True)
+    device_id: Mapped[str] = mapped_column(String(36), ForeignKey("Devices.device_id"), primary_key=True)
+
+    value: Mapped[str] = mapped_column(String(256), unique=True)
+    expiry: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    key_type: Mapped[KeyType]
 

@@ -33,15 +33,21 @@ class HardwareMemoryReprObject(pydantic.BaseModel):
     main_memory: float = 0.0
     swap_memory: float = 0.0
 
+# Users, contacts, scopes, and units
 class ContactReprObject(pydantic.BaseModel):
     contact_id: int = 0
     name: str = ""
     email: str = ""
     phone: str = ""
 
+class ScopeReprObject(pydantic.BaseModel):
+    scope_id: int
+    scope_name: str
+
 class UserReprObject(pydantic.BaseModel):
     user_id: int = 0
     contact: dict = {}
+    scopes: list = [] # Just a list of strings here
 
 class UnitReprObject(pydantic.BaseModel):
     unit_id: int = 0
@@ -71,6 +77,11 @@ class DeviceReprObject(pydantic.BaseModel):
     memory: HardwareMemoryReprObject = HardwareMemoryReprObject()
     disks: List[HardwareDiskReprObject] = []
     
+# Request Objects
+class DeviceCreateRequestObject(pydantic.BaseModel):
+    hostname: str
+    unit: int
+    serial_number: str
 
 # Response Objects
 class ErrorResponseObject(pydantic.BaseModel):

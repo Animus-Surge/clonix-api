@@ -1,0 +1,24 @@
+{
+  "Scopes": [
+    "global:admin",
+    "global:users:manage",
+    "global:devices:manage",
+    "global:devices:read",
+    "global:devices:keys:manage",
+    "global:devices:keys:read",
+    "global:units:manage",
+    "unit:admin",
+    "unit:users:manage",
+    "unit:devices:manage",
+    "unit:devices:read",
+    "unit:subunit:manage",
+    "unit:devices:keys:manage",
+    "unit:devices:keys:read",
+    "unit:read",
+    "autoprovision:manage",
+    "autoprovision:read"
+  ],
+  "Units": [
+  ]
+
+}

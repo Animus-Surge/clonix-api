@@ -1,19 +1,21 @@
 import datetime
+from typing import Annotated
+import uuid
 
-from fastapi import FastAPI, Request, Depends
+import pydantic
+from fastapi import FastAPI, Header, Request, Depends, Response, status
 from fastapi.responses import RedirectResponse
-
 from fastapi.middleware.cors import CORSMiddleware
-from sqlalchemy import select
+from sqlalchemy import select, delete
 from sqlalchemy.engine import Connection
+from sqlalchemy.orm import Session
 
 import database
-
+import objects
 import schema
-from objects import DeviceListResponseObject, DeviceReprObject, UnitReprObject
 
 app = FastAPI()
-schema.metadata_obj.create_all(database.engine)
+schema.ClonixTableBase.metadata.create_all(database.engine)
 
 # Authentication endpoints
 @app.get("/api/v1/auth/login")
@@ -35,51 +37,52 @@ async def index():
     return {"message": "Hello World!"}
 
 
+# Provisioning endpoints
+# These come from the provisioning software
+
+@app.post("/api/v1/provision/{device_serial}/data")
+async def device_data_in(authorization: Annotated[str | None, Header()]):
+    pass
+
+@app.post("/api/v1/provision/{device_serial}")
+async def provision_device(device_serial: str, db: Session = Depends(database.get_db)):
+    # Retrieves a configuration object from the database
+    
+    
+    pass
+
+@app.post("/api/v1/provision")
+async def create_autoprovision_entry(db: Session = Depends(database.get_db)):
+    # Creates a new entry
+
+    pass
+
+
 # Devices
 @app.get("/api/v1/devices/")
 async def list_devices(request: Request, db: Connection = Depends(database.get_db)):
-    dev_sel_stmt = select(schema.device)
-    dev_sel_res = db.execute(dev_sel_stmt).mappings().all()
+    pass
 
-    unit_sel_stmt = select(schema.unit)
-    unit_sel_res = db.execute(unit_sel_stmt).mappings().all()
-
-    # TODO: filters
-
-    device_list = []
-    for device in dev_sel_res:
-        device_obj = DeviceReprObject(
-            uuid=device.get("device_uuid", ""),
-            hostname=device.get("hostname", ""),
-            serial_number=device.get("serial_number", ""),
-            unit={},
-            provision_timestamp=device.get("provision_stamp", "").strftime("%Y/%m/%d %H:%M:%S"),
-            checkin_timestamp=device.get("checkin_stamp", "").strftime("%Y/%m/%d %H:%M:%S")
-        ) # TODO: facter integration
-
-        for unit in unit_sel_res:
-            if unit.get("unit_id") == device.unit:
-                unit_obj = UnitReprObject(
-                    unit_id=unit.get("unit_id", 0),
-                    unit_name=unit.get("unit_name", ""),
-                    manifest_id=unit.get("manifest_id", ""),
-                )
-                device_obj.unit = dict(unit_obj)
-        
-        device_list.append(dict(device_obj))
-
-    device_list_obj = DeviceListResponseObject(
-        count=len(device_list),
-        devices=device_list)
-
-    return dict(device_list_obj)
-
-@app.post("/api/v1/devices/")
-async def create_device(request: Request):
+@app.post("/api/v1/devices/", status_code=status.HTTP_201_CREATED)
+async def create_device(device_info: objects.DeviceCreateRequestObject, authorization: Annotated[str | None, Header()], response: Response, db: Session = Depends(database.get_db)):
     # Request takes in: hostname, serial number, unit.
 
+    # User scope checking
+
+
     stamp = datetime.datetime.now()
-    pass
+    device_uuid = str(uuid.uuid4())
+
+    device = schema.Device(device_id=device_uuid, provision_timestamp=stamp,
+        device_hostname=device_info.hostname,
+        device_sn=device_info.serial_number,
+        device_unit=device_info.unit)
+
+    db.add(device)
+    db.commit()
+    db.refresh(device)
+
+    return device
 
 @app.get("/api/v1/devices/{device}")
 async def get_device_info(request: Request, device: str):
@@ -90,9 +93,16 @@ async def update_device(request: Request, device: str):
     pass
 
 
-@app.delete("/api/v1/devices/{device}")
-async def delete_device(request: Request, device):
-    pass
+@app.delete("/api/v1/devices/{device}", status_code=status.HTTP_204_NO_CONTENT)
+async def delete_device(device, response: Response, user_id: int, db: Session = Depends(database.get_db)):
+    device_obj = db.get(schema.Device, device)
+    if device_obj:
+        db.delete(device_obj)
+        db.commit()
+        return None
+    
+    response.status_code = 404
+    return None
 
 
 # Keys

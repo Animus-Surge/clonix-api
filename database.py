@@ -1,7 +1,7 @@
 import json
 
 from sqlalchemy import create_engine, select
-from sqlalchemy.orm import declarative_base, sessionmaker
+from sqlalchemy.orm import sessionmaker
 
 from objects import DeviceReprObject
 
@@ -11,16 +11,12 @@ DB_URI='mysql+pymysql://root:supersecurepassword123@localhost:3301/clonixdb'
 
 # Used when the actual connections are made to the database
 engine = create_engine(DB_URI)
+SessionLocal = sessionmaker(autocommit=False, autoflush=False, bind=engine)
 
 def get_db():
-    with engine.connect() as connection:
-        yield connection
+    db = SessionLocal()
+    try:
+        yield db
+    finally:
+        db.close()
 
-
-# TODO: filter
-def get_devices(hostname_filter: str = ''):
-    pass
-
-
-def create_device(metadata: DeviceReprObject):
-    pass
