@@ -5,6 +5,18 @@ from typing import List, Union
 
 import pydantic
 
+# Buildings
+class BuildingReprObject(pydantic.BaseModel):
+    building_id: int
+
+    name: str
+
+    street_number: int
+    street: str
+    city: str
+    state: str
+    zip_code: int
+
 # Hardware Representation Objects
 class HardwareDiskReprObject(pydantic.BaseModel):
     vendor: str = "N/A"
@@ -34,21 +46,6 @@ class HardwareMemoryReprObject(pydantic.BaseModel):
     swap_memory: float = 0.0
 
 # Users, contacts, scopes, and units
-class ContactReprObject(pydantic.BaseModel):
-    contact_id: int = 0
-    name: str = ""
-    email: str = ""
-    phone: str = ""
-
-class ScopeReprObject(pydantic.BaseModel):
-    scope_id: int
-    scope_name: str
-
-class UserReprObject(pydantic.BaseModel):
-    user_id: int = 0
-    contact: dict = {}
-    scopes: list = [] # Just a list of strings here
-
 class UnitReprObject(pydantic.BaseModel):
     unit_id: int = 0
     unit_name: str = ""
@@ -61,7 +58,7 @@ class DeviceReprObject(pydantic.BaseModel):
     uuid: str = ""
     hostname: str = "" # Contains the domain suffix, so if the hostname stored is 'some-hostname', this field returns 'some-hostname.<suffix>'. i.e. 'some-hostname.example.adp.net'
     serial_number: str = ""
-    unit: dict = {}
+    unit: UnitReprObject
 
     provision_timestamp: str = "" # THIS IS NOT DEVICE CREATION DATE. This is when clonix starts receiving information from the actual device.
     checkin_timestamp: str = "" # Puppet's last check in
@@ -76,7 +73,22 @@ class DeviceReprObject(pydantic.BaseModel):
     networking: List[HardwareNICReprObject] = []
     memory: HardwareMemoryReprObject = HardwareMemoryReprObject()
     disks: List[HardwareDiskReprObject] = []
-    
+
+    # Location information (laptops will have these fields blank usually)
+    building: BuildingReprObject | None = None
+    room: str = ""
+
+# Minimal Objects
+class DeviceListViewMinReprObject(pydantic.BaseModel):
+    # Specific for device list
+    uuid: str
+    hostname: str
+    serial_number: str
+    unit: str
+    building: str
+    room_number: str
+    checkin_date: str
+
 # Request Objects
 class DeviceCreateRequestObject(pydantic.BaseModel):
     hostname: str
@@ -90,5 +102,5 @@ class ErrorResponseObject(pydantic.BaseModel):
 
 class DeviceListResponseObject(pydantic.BaseModel):
     count: int = 0
-    devices: List[DeviceReprObject] = []
+    devices: List[DeviceListViewMinReprObject]
 

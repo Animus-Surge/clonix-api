@@ -6,7 +6,7 @@ import datetime
 from enum import Enum
 
 from sqlalchemy import JSON, DateTime, BigInteger, ForeignKey, MetaData, Table, Column, Integer, String, func, null
-from sqlalchemy.orm import DeclarativeBase, Mapped, mapped_column
+from sqlalchemy.orm import DeclarativeBase, Mapped, attribute_keyed_dict, mapped_column
 
 from typing import Literal
 
@@ -27,7 +27,18 @@ class ClonixTableBase(DeclarativeBase):
     type_annotation_map = {
         dict: JSON
     }
-    pass
+    
+class Building(ClonixTableBase):
+    __tablename__="Buildings"
+
+    building_id: Mapped[int] = mapped_column(primary_key=True, autoincrement=True)
+
+    building_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    address_street_number: Mapped[int] = mapped_column(nullable=False)
+    address_street_name: Mapped[str] = mapped_column(String(256), nullable=False)
+    address_city: Mapped[str] = mapped_column(String(256), nullable=False)
+    address_state: Mapped[str] = mapped_column(String(256), nullable=False)
+    address_zip: Mapped[str] = mapped_column(String(5), nullable=False)
 
 class Notification(ClonixTableBase):
     __tablename__="Notifications"
@@ -121,6 +132,15 @@ class Device(ClonixTableBase):
     device_unit: Mapped[int] = mapped_column(ForeignKey("Units.unit_id"))
 
     provision_timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+    checkin_timestamp: Mapped[datetime.datetime] = mapped_column(DateTime(True))
+
+class DeviceLocation(ClonixTableBase):
+    __tablename__="DeviceLocations"
+
+    device_id: Mapped[str] = mapped_column(ForeignKey("Devices.device_id"), primary_key=True)
+    building_id: Mapped[int] = mapped_column(ForeignKey("Buildings.building_id"), primary_key=True)
+
+    room_number: Mapped[str] = mapped_column(String(8), nullable=False)
 
 class AutoProvision(ClonixTableBase):
     __tablename__="Autoprovision"

@@ -60,7 +60,12 @@ async def create_autoprovision_entry(db: Session = Depends(database.get_db)):
 
 # Devices
 @app.get("/api/v1/devices/")
-async def list_devices(request: Request, db: Connection = Depends(database.get_db)):
+async def list_devices(db: Session = Depends(database.get_db)):
+    device_list = database.q_devices_list(db)
+
+    return objects.DeviceListResponseObject(count=len(device_list), devices=device_list)
+
+async def list_devices_full():
     pass
 
 @app.post("/api/v1/devices/", status_code=status.HTTP_201_CREATED)
