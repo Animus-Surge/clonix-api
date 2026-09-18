@@ -1,0 +1,4 @@
+- Ivanti Cloud - Ticket management
+- Landscape - Vulnerability and tracking
+- PuppetDB/OpenVOXDb - Facts and system information
+- Frontend/Backend integration

@@ -2,6 +2,7 @@ import datetime
 from typing import Annotated
 import uuid
 
+import pathlib
 import pydantic
 from fastapi import FastAPI, Header, Request, Depends, Response, status
 from fastapi.responses import RedirectResponse
@@ -16,6 +17,9 @@ import schema
 
 app = FastAPI()
 schema.ClonixTableBase.metadata.create_all(database.engine)
+
+IMAGE_STORE_DIR = pathlib.Path("/var/clonix/images")
+IMAGE_STORE_DIR.mkdir(parents=True, exist_ok=True)
 
 # Authentication endpoints
 @app.get("/api/v1/auth/login")
@@ -36,6 +40,21 @@ async def saml_metadata():
 async def index():
     return {"message": "Hello World!"}
 
+
+# File handling
+@app.post("/api/v1/file/image/{filename}")
+async def create_image_file(request: Request, filename: str):
+    target_file = IMAGE_STORE_DIR / f"{filename}.tar.zst"
+
+    if target_file.exists():
+        pass
+    pass
+
+@app.get("/api/v1/file/image/{filename}")
+async def get_image_file(request: Request, filename: str):
+    pass
+
+# Large package files can go here too (for example: 
 
 # Provisioning endpoints
 # These come from the provisioning software
@@ -115,13 +134,22 @@ async def delete_device(device, response: Response, user_id: int, db: Session = 
 async def get_device_keys(request: Request, device, key):
     pass
 
-@app.post("/api/v1/devices/{device}/keys/{key}")
+@app.post("/api/v1/devices/{device}/keys")
 async def create_device_key(request: Request, device, key):
     # This should be called by a cloner device
     pass
 
 @app.delete("/api/v1/devices/{device}/keys/{key}")
 async def delete_device_key(request: Request, device, key):
+    pass
+
+# Images
+@app.post("/api/v1/images")
+async def create_image_metadata(request: Request, db: Session = Depends(database.get_db)):
+    pass
+
+@app.get("/api/v1/images/{image_name}")
+async def get_image_info(request: Request, image_name: str, db: Session = Depends(database.get_db)):
     pass
 
 

@@ -65,4 +65,10 @@ def q_devices_list(session: Session) -> list[DeviceListViewMinReprObject]:
     return [DeviceListViewMinReprObject.model_validate(row) for row in res]
 
 def q_device_info(session: Session, device_uuid: str) -> DeviceReprObject | ErrorResponseObject | None:
+
+    
+
     return None
+
+def m_create_device(session: Session, device_obj: any) -> any:
+    pass
